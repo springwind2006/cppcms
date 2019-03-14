@@ -2,6 +2,7 @@
 #include <cppcms/applications_pool.h>
 #include <cppcms/service.h>
 #include <cppcms/http_response.h>
+#include <cppcms/json.h>
 #include <iostream>
 
 class my_hello_world : public cppcms::application {
@@ -15,12 +16,14 @@ public:
 
 void my_hello_world::main(std::string /*url*/)
 {
-    response().out()<<
-        "<html>\n"
-        "<body>\n"
-        "  <h1>Hello World</h1>\n"
-        "</body>\n"
-        "</html>\n";
+    cppcms::json::value my_object;
+    // Create object data
+    my_object["name"]="Moshe";
+    my_object["salary"]=1000.0;
+    my_object["kids_names"][0]="Yossi";
+    my_object["kids_names"][1]="Yonni";
+    
+    response().out() << my_object;
 }
 
 int main(int argc,char ** argv)

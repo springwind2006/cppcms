@@ -79,7 +79,7 @@ int main()
     std::cout << other << std::endl;
 
     // write data formatter nicely
-    my_object.save(std::cout,cppcms::json::readable);
+    //my_object.save(std::cout,cppcms::json::readable);
 
     // save object to stream and load it back
     std::stringstream tmp;

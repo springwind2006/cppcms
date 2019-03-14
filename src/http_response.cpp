@@ -535,9 +535,9 @@ response::response(context &context) :
 	set_content_header("text/html");
 	if(context_.service().cached_settings().service.disable_xpowered_by==false) {
 		if(context_.service().cached_settings().service.disable_xpowered_by_version)
-			set_header("X-Powered-By", CPPCMS_PACKAGE_NAME);
+			set_header("X-Powered-By", "CppSteeze");
 		else
-			set_header("X-Powered-By", CPPCMS_PACKAGE_NAME "/" CPPCMS_PACKAGE_VERSION);
+			set_header("X-Powered-By", "CppSteeze/1.0.0" );
 	}
 }
 

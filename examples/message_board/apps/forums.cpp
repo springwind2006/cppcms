@@ -25,6 +25,7 @@ new_topic_form::new_topic_form()
 
 } // data
 
+
 namespace apps {
 
 forums::forums(cppcms::service &srv) : master(srv)

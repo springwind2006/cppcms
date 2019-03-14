@@ -491,7 +491,7 @@ namespace cgi {
 		bool process_output_headers(booster::system::error_code &e)
 		{
 			static char const *addon = 
-				"Server: CppCMS-Embedded/" CPPCMS_PACKAGE_VERSION "\r\n"
+				"Server: CppSteeze-Embedded/1.0.1\r\n"
 				"Connection: close\r\n";
 
 			using cppcms::http::impl::parser;

@@ -149,7 +149,7 @@ namespace impl {
 				timeout = v.get("session.timeout",24*3600);
 				expire = v.get("session.expire","browser");
 				disable_automatic_load = v.get("session.disable_automatic_load",false);
-				cookies.prefix = v.get("session.cookies.prefix","cppcms_session");
+				cookies.prefix = v.get("session.cookies.prefix","cppsteeze_session");
 				cookies.domain = v.get("session.cookies.domain","");
 				cookies.path = v.get("session.cookies.path","/");
 				cookies.time_shift = v.get("session.cookies.time_shift",0);

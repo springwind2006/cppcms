@@ -415,7 +415,6 @@ void file_server::list_dir(std::string const &url,std::string const &path)
 		out <<"</tr>\n";
 	}
 	out <<"</tbody>\n</table>\n";
-	out <<"<p>CppCMS-Embedded/" CPPCMS_PACKAGE_VERSION "</p>\n";
 	out <<"</body>\n";
 }
 
