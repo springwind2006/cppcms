@@ -24,7 +24,7 @@ Getting:
 ```
 aptitude install cmake libpcre3-dev zlib1g-dev libgcrypt11-dev libicu-dev python  
 ```
-**RPM Based (RadHat, CentOS, Fedora, Suse)**:
+**RPM Based (RadHat, CentOS, Fedora, Suse)**:  
 Packages: cmake gcc-c++ gcc make zlib-devel pcre-devel libicu-devel libgcrypt-devel  
 Getting:
 ```
@@ -32,7 +32,7 @@ yum install cmake gcc-c++ gcc make zlib-devel pcre-devel libicu-devel libgcrypt-
 ```
 
 ## Notes for Microsoft Visual C++ users
-Building cppcms with Visual Studio projects is not supported due to complexity of debug and release mode.
+Building cppcms with Visual Studio projects is not supported due to complexity of debug and release mode.  
 You should use nmake as shown in the example.
 
 
