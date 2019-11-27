@@ -178,5 +178,6 @@ cmake -DCMAKE_TOOLCHAIN_FILE=ToolChain.cmake -DDISABLE_ICU_LOCALIZATION=ON  -DCM
 make  
 make install 
 ```
-
-[How to build CppCMS 1.x.x](http://cppcms.com/wikipp/en/page/cppcms_1x_build)
+   
+   
+See [How to build CppCMS 1.x.x](http://cppcms.com/wikipp/en/page/cppcms_1x_build)
