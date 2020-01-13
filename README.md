@@ -11,8 +11,7 @@ In order to build CppCMS you need:
 ## Recommended Dependencies
 - ICU Library 3.6 and above -- support of advanced localization features.
 - gcrypt or OpenSSL library -- for support of encrypted session cookies.
-
-If both available gcrypt would be used.
+  If both available gcrypt would be used.
 
 ## Suggested
 - iconv library (if libc does not provide iconv interface)
