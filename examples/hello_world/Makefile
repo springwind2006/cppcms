@@ -1,4 +1,4 @@
-LIBS= -lcppcms -lbooster
+LIBS= -lcrypto -lcppcms -lbooster 
 
 
 all: hello
