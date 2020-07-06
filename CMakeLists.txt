@@ -33,7 +33,7 @@ endif()
 
 
 option(DISABLE_SHARED		"Disable shared libraries build" OFF)
-option(DISABLE_STATIC		"Disable static libraries build" ON)
+option(DISABLE_STATIC		"Disable static libraries build" OFF)
 option(DISABLE_GCRYPT		"Disable usage of gcrypt library" OFF)
 option(DISABLE_OPENSSL		"Disable usage of openssl library" OFF)
 option(DISABLE_FCGI		"Disable fastcgi web server api" OFF)
@@ -697,15 +697,411 @@ if(NOT DISABLE_TCPCACHE)
 	endif()
 endif()
 
-# cppcms_make_key
 add_executable(cppcms_make_key src/make_key.cpp)
 target_link_libraries(cppcms_make_key ${CPPCMS_LIB})
 
-# cppcms_config_find_param
 add_executable(cppcms_config_find_param src/cppcms_config_find_param.cpp src/json.cpp)
 if(DISABLE_SHARED)
 	target_link_libraries(cppcms_config_find_param booster-static)
 else(DISABLE_SHARED)
 	target_link_libraries(cppcms_config_find_param booster)
 endif(DISABLE_SHARED)
+
+#########################################
+# Tests
+#########################################
+
+set(ALL_TESTS 
+	form_test
+	proto_test
+	pool_test
+	disco_test
+	http_timeouts_test
+	file_server_test
+	encryptor_test
+	storage_test
+	json_test
+	base64_test
+	forwarder_test
+	jsonrpc_test
+	cookie_test
+	multipart_parser_test
+	content_type_parser_test
+	serialization_test
+	status_test
+	xss_test
+	rewrite_test
+	url_mapper_test
+	copy_filter_test
+	gzip_test
+	session_interface_test
+	secure_post_test
+	mount_point_test
+	todec_test
+	hash_map_test
+	response_test
+	file_buffer_test
+	filter_test
+	plugin_test
+	)
+
+if(NOT DISABLE_PREFORK_CACHE AND NOT IS_WINDOWS)
+	set(ALL_TESTS ${ALL_TESTS} allocator_test)
+endif()
+
+if(NOT DISABLE_TCPCACHE)
+	set(ALL_TESTS ${ALL_TESTS} cache_backend_test cache_frontend_test)
+endif()
+
+if(NOT DISABLE_SHARED)
+	set(ALL_TESTS ${ALL_TESTS} 
+		tc_test
+		loadable_storage_test
+		)
+endif()
+
+if(NOT IS_WINDOWS)
+	set(ALL_TESTS ${ALL_TESTS} cppcms_service_test)
+endif()
+
+foreach(TEST ${ALL_TESTS})
+	add_executable(${TEST} tests/${TEST}.cpp)
+	target_link_libraries(${TEST} ${CPPCMS_LIB})
+endforeach()
+
+add_executable(external_session_test tests/external_session_test.c)
+target_link_libraries(external_session_test ${CPPCMS_LIB})
+set(ALL_TESTS ${ALL_TESTS} external_session_test)
+if(NOT DISABLE_GZIP)
+	target_link_libraries(response_test ${ZLIB})
+endif()
+
+#####################################
+# End of tests
+#####################################
+
+# These are use export
+if(IS_WINDOWS AND NOT DISABLE_SHARED)
+	set_target_properties(${ALL_TESTS} hello_world cppcms PROPERTIES
+				COMPILE_DEFINITIONS DLL_EXPORT)
+endif()
+
+set_target_properties(${CPPCMS_LIBS} PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+set_target_properties(${CPPCMS_LIBS} PROPERTIES OUTPUT_NAME "cppcms${CPPCMS_SUFFIX}")
+if(IS_WINDOWS)
+	set_target_properties(${CPPCMS_LIBS} PROPERTIES VERSION ${CPPCMS_SOVERSION} SOVERSION ${CPPCMS_SOVERSION})
+else()
+	set_target_properties(${CPPCMS_LIBS} PROPERTIES VERSION ${CPPCMS_VERSION} SOVERSION ${CPPCMS_SOVERSION})
+endif()
+
+set_target_properties(${CPPCMS_LIBS} PROPERTIES 
+			PUBLIC_HEADER "${CPPCMS_PUBLIC_HEADERS}")
+			
+if(MSVC AND NOT DISABLE_STATIC)
+	set_target_properties(cppcms-static PROPERTIES PREFIX "lib")
+endif(MSVC AND NOT DISABLE_STATIC)
+
+configure_file(config.cmake.h cppcms/config.h)
+
+set(CPPCMS_INSTALL_TARGETS ${CPPCMS_LIBS} cppcms_config_find_param cppcms_make_key)
+if(NOT DISABLE_TCPCACHE)
+	set(CPPCMS_INSTALL_TARGETS ${CPPCMS_INSTALL_TARGETS} cppcms_scale)
+endif()
+
+#################
+# Installation
+#################
+
+
+install(TARGETS ${CPPCMS_INSTALL_TARGETS} 
+	RUNTIME DESTINATION bin
+	LIBRARY DESTINATION ${LIBDIR}
+	ARCHIVE DESTINATION ${LIBDIR}
+	PUBLIC_HEADER DESTINATION include/cppcms)
+install(PROGRAMS bin/cppcms_tmpl_cc bin/cppcms_run
+	DESTINATION bin)
+
+install(DIRECTORY cppcms DESTINATION include
+        PATTERN ".svn" EXCLUDE)
+
+
+#############
+# TESTS
+#############
+		
+
+
+set(CNF "${CMAKE_CURRENT_SOURCE_DIR}/tests")
+
+add_test(base64_test base64_test)
+add_test(todec_test todec_test)
+add_test(response_test response_test)
+add_test(encryptor_test encryptor_test "${CNF}")
+add_test(storage_test storage_test)
+add_test(json_test json_test)
+add_test(hash_map_test hash_map_test)
+if(NOT DISABLE_PREFORK_CACHE AND NOT IS_WINDOWS)
+	add_test(allocator_test allocator_test)
+endif()
+
+add_test(multipart_parser_test multipart_parser_test "${CNF}")
+add_test(content_type_parser_test content_type_parser_test)
+if(NOT DISABLE_TCPCACHE)
+	add_test(cache_backend_test cache_backend_test)
+endif()
+add_test(serialization_test serialization_test)
+add_test(xss_test xss_test)
+add_test(rewrite_test rewrite_test)
+add_test(url_mapper_test url_mapper_test)
+add_test(copy_filter_test copy_filter_test)
+add_test(mount_point_test mount_point_test)
+add_test(file_buffer_test file_buffer_test)
+if(NOT DISABLE_SHARED)
+	add_test(tc_test_shared tc_test "--shared" "${CNF}")
+	add_test(tc_test_separate tc_test "--separate" "${CNF}")
+	add_test(plugin_test plugin_test "${CMAKE_CURRENT_BINARY_DIR}")
+endif()
+
+add_test(status_test
+	status_test "-c" "${CNF}/status_test.js" 
+	"--test-exec=${PYTHON} ${CNF}/status_test.py")
+
+add_test(pool_test
+	pool_test "-c" "${CNF}/pool_test.js" 
+	"--test-exec=${PYTHON} ${CNF}/pool_test.py")
+
+add_test(filter_test
+	filter_test "-c" "${CNF}/filter_test.js" 
+	"--test-exec=${PYTHON} ${CNF}/filter_test.py")
+
+add_test(async_status_test
+	status_test "-c" "${CNF}/status_test.js" "--test-async=async"
+	"--test-exec=${PYTHON} ${CNF}/status_test.py async")
+
+add_test(form_test
+	form_test "-c" "${CNF}/form_test.js" 
+	"--test-exec=${PYTHON} ${CNF}/form_test.py")
+
+add_test(cookie_test
+	cookie_test "-c" "${CNF}/cookie_test.js" 
+	"--test-exec=${PYTHON} ${CNF}/cookie_test.py")
+
+
+add_test(internal_forwarder_test 
+	forwarder_test "-c" "${CNF}/forwarder_test.js" 
+	"--test-exec=${PYTHON} ${CNF}/forwarder_test.py"
+	"--test-internal=true")
+
+add_test(forwarder_test
+	forwarder_test "-c" "${CNF}/forwarder_test.js" 
+	"--test-exec=${PYTHON} ${CNF}/forwarder_test.py"
+	"--test-internal=false")
+
+add_test(jsonrpc_test
+	jsonrpc_test "-c" "${CNF}/jsonrpc_test.js"
+	"--test-exec=${PYTHON} ${CNF}/jsonrpc_test.py")
+
+add_test(http_timeouts_test_read
+	http_timeouts_test "-c" "${CNF}/proto_test.js" 
+	"--service-api=http" "--service-port=8080" "--service-ip=127.0.0.1" "--http-timeout=5" "--logging-level=debug"
+	"--test-write=false"
+	"--test-exec=${PYTHON} ${CNF}/http_timeouts_test.py read")
+
+#
+# In future maybe
+#
+#if(${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD")
+#	set(HTTP_TIMEOUT 15)
+#else()
+#	set(HTTP_TIMEOUT 5)
+#endif()
+#
+
+set(HTTP_TIMEOUT 15)
+
+add_test(http_timeouts_test_write
+	http_timeouts_test "-c" "${CNF}/proto_test.js" 
+	"--service-api=http" "--service-port=8080" "--service-ip=127.0.0.1" "--http-timeout=${HTTP_TIMEOUT}" "--logging-level=debug" "--service-sndbuf=32786" "--service-rcvbuf=32768"
+	"--test-write=true"
+	"--test-exec=${PYTHON} ${CNF}/http_timeouts_test.py write ${HTTP_TIMEOUT}")
+
+
+add_test(file_server_test
+	file_server_test "-c" "${CNF}/file_server_test.js" 
+	"--test-exec=${PYTHON} ${CNF}/file_server_test.py"
+	"-U" "${CNF}"
+	)
+
+add_test(file_server_test_no_links
+	file_server_test "-c" "${CNF}/file_server_test.js" "--file_server-check_symlink=false" 
+	"--test-exec=${PYTHON} ${CNF}/file_server_test.py no_links"
+	"-U" "${CNF}"
+	)
+
+add_test(file_server_with_listing_test
+	file_server_test "-c" "${CNF}/file_server_test.js" 
+	"--file_server-listing=true"
+	"--test-exec=${PYTHON} ${CNF}/file_server_test.py listing"
+	"-U" "${CNF}"
+	)
+
+
+
+add_test(file_server_test_async
+	file_server_test "-c" "${CNF}/file_server_test.js" "--file_server-async=true"
+	"--test-exec=${PYTHON} ${CNF}/file_server_test.py"
+	"-U" "${CNF}"
+	)
+
+add_test(file_server_test_no_links_async
+	file_server_test "-c" "${CNF}/file_server_test.js" "--file_server-check_symlink=false" "--file_server-async=true" 
+	"--test-exec=${PYTHON} ${CNF}/file_server_test.py no_links"
+	"-U" "${CNF}"
+	)
+
+add_test(file_server_with_listing_test_async
+	file_server_test "-c" "${CNF}/file_server_test.js" "--file_server-async=true" 
+	"--file_server-listing=true"
+	"--test-exec=${PYTHON} ${CNF}/file_server_test.py listing"
+	"-U" "${CNF}"
+	)
+
+add_test(disco_test_http 
+	disco_test "-c" "${CNF}/proto_test.js" 
+	"--service-api=http" "--service-port=8080" "--service-ip=127.0.0.1"
+	"--test-exec=${PYTHON} ${CNF}/disco_test.py http")
+
+add_test(disco_test_fastcgi_tcp 
+	disco_test "-c" "${CNF}/proto_test.js" 
+	"--service-api=fastcgi" "--service-port=8080" "--service-ip=127.0.0.1"
+	"--test-exec=${PYTHON} ${CNF}/disco_test.py fastcgi_tcp")
+
+add_test(disco_test_scgi_tcp 
+	disco_test "-c" "${CNF}/proto_test.js" 
+	"--service-api=scgi" "--service-port=8080" "--service-ip=127.0.0.1"
+	"--test-exec=${PYTHON} ${CNF}/disco_test.py scgi_tcp")
+
+add_test(secure_post_test
+	secure_post_test "-c" "${CNF}/secure_post_test.js" 
+	"--test-exec=${PYTHON} ${CNF}/secure_post_test.py"
+	)
+
+
+if(NOT IS_WINDOWS)
+	add_test(disco_test_fastcgi_unix 
+		disco_test "-c" "${CNF}/proto_test.js" 
+		"--service-api=fastcgi" "--service-socket=/tmp/cppcms_test_socket"
+		"--test-exec=${PYTHON} ${CNF}/disco_test.py fastcgi_unix")
+
+	add_test(disco_test_scgi_unix 
+		disco_test "-c" "${CNF}/proto_test.js" 
+		"--service-api=scgi" "--service-socket=/tmp/cppcms_test_socket"
+		"--test-exec=${PYTHON} ${CNF}/disco_test.py scgi_unix")
+endif()
+
+if(NOT DISABLE_GZIP)
+	add_test(gzip_test
+		gzip_test "--service-api=http"  "--http-script=/test"
+		"--test-exec=${PYTHON} ${CNF}/gzip_test.py")
+	if(NOT DISABLE_TCPCACHE)
+		add_test(cache_frontend_test cache_frontend_test)
+	endif()
+endif()
+
+
+
+
+if(NOT IS_WINDOWS)
+	add_test(cppcms_service_test "${CNF}/service_test" "${PYTHON}" "${CMAKE_CURRENT_BINARY_DIR}")
+endif()
+
+
+add_test(external_session_test external_session_test "${CNF}/external_session_test.js")
+foreach(LOC client server both)
+	foreach(EXP renew browser fixed)
+		add_test(session_interface_test_${LOC}_${EXP}
+			 session_interface_test -c "${CNF}/session_interface_test.js"
+			 "--session-expire=${EXP}" "--session-location=${LOC}"
+			 "--test-exec=${PYTHON} ${CNF}/session_interface_test.py ${LOC} ${EXP}")
+	endforeach()
+endforeach()
+
+foreach(TYPE async sync nonblocking)
+	add_test(proto_test_${TYPE}_http 
+		proto_test "-c" "${CNF}/proto_test.js" 
+		"--test-async=${TYPE}" "--service-api=http" "--service-port=8080" "--service-ip=127.0.0.1"
+		"--test-exec=${PYTHON} ${CNF}/proto_test.py http")
+	add_test(proto_test_${TYPE}_scgi 
+		proto_test "-c" "${CNF}/proto_test.js" 
+		"--test-async=${TYPE}" "--service-api=scgi" "--service-port=8080" "--service-ip=127.0.0.1"
+		"--test-exec=${PYTHON} ${CNF}/proto_test.py scgi_tcp")
+	add_test(proto_test_${TYPE}_fastcgi 
+		proto_test "-c" "${CNF}/proto_test.js" 
+		"--test-async=${TYPE}" "--service-api=fastcgi" "--service-port=8080" "--service-ip=127.0.0.1"
+		"--test-exec=${PYTHON} ${CNF}/proto_test.py fastcgi_tcp")
+	if(NOT IS_WINDOWS)
+		add_test(proto_test_${TYPE}_scgi_unix
+			proto_test "-c" "${CNF}/proto_test.js" 
+			"--test-async=${TYPE}" "--service-api=scgi" "--service-socket=/tmp/cppcms_test_socket"
+			"--test-exec=${PYTHON} ${CNF}/proto_test.py scgi_unix")
+		add_test(proto_test_${TYPE}_fastcgi_unix
+			proto_test "-c" "${CNF}/proto_test.js" 
+			"--test-async=${TYPE}" "--service-api=fastcgi" "--service-socket=/tmp/cppcms_test_socket"
+			"--test-exec=${PYTHON} ${CNF}/proto_test.py fastcgi_unix")
+	endif()
+endforeach()
+
+if(NOT DISABLE_SHARED)
+	add_library(loadable_storage SHARED tests/loadable_storage.cpp)
+	target_link_libraries(loadable_storage ${CPPCMS_LIB})
+	if(WIN32 OR CYGWIN)
+		set_target_properties(loadable_storage PROPERTIES COMPILE_DEFINITIONS DLL_EXPORT)
+	endif()
+	add_test(loadable_storage_pass 
+		loadable_storage_test
+		--service-api=http
+		--session-location=server
+		--session-server-storage=external
+		"--session-server-shared_object=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}loadable_storage${CMAKE_SHARED_LIBRARY_SUFFIX}"
+		--session-server-entry_point=my_sessions_generator
+		--session-server-settings-must_be_set=false
+		)
+	add_test(loadable_storage_fail
+		loadable_storage_test
+		--service-api=http
+		--session-location=server
+		--session-server-storage=external
+		"--session-server-shared_object=${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_SHARED_LIBRARY_PREFIX}loadable_storage${CMAKE_SHARED_LIBRARY_SUFFIX}"
+		--session-server-entry_point=my_sessions_generator
+		--session-server-settings-must_be_set_incorrect=false
+		)
+	set_tests_properties(loadable_storage_fail PROPERTIES WILL_FAIL TRUE)
+endif()
+
+
+
+set(TESTS_WITH_TIMEOUT
+	forwarder_test 
+	jsonrpc_test 
+	proto_test_sync_http
+	proto_test_async_http
+	proto_test_sync_scgi
+	proto_test_async_scgi)
+
+if(NOT DISABLE_TCPCACHE)
+	set(TESTS_WITH_TIMEOUT ${TESTS_WITH_TIMEOUT} cache_backend_test)
+endif()
+
+set_tests_properties( 
+	${TESTS_WITH_TIMEOUT}
+	PROPERTIES TIMEOUT 120)
+
+if(NOT IS_WINDOWS)
+	set_tests_properties(
+		proto_test_sync_scgi_unix
+		proto_test_async_scgi_unix
+		PROPERTIES TIMEOUT 120)
+
+endif()
+
 
