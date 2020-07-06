@@ -6,7 +6,7 @@ if [ "$CPPCMS_PATH" != "" ]
 then
     CPPCMS_INC=-I$CPPCMS_PATH/include
     CPPCMS_LIB=-L$CPPCMS_PATH/lib
-    CPPCMS_LINK_FLAGS=-Wl,-rpath=$CPPCMS_PATH/lib
+    CPPCMS_LINK_FLAGS=-Wl,-rpath $CPPCMS_PATH/lib
 fi
 
 PHP_FLAGS=`php-config --includes`

@@ -434,7 +434,10 @@ struct applications_pool::_data {
 	struct attachment {
 		mount_point mp;
 		booster::shared_ptr<application_specific_pool> pool;
-		attachment(booster::shared_ptr<application_specific_pool> p,mount_point const &m) : mp(m), pool(p) {}
+		attachment(
+            booster::shared_ptr<application_specific_pool> p,
+            mount_point const &m
+        ) : mp(m), pool(p) {}
 	};
 	std::list<attachment> apps;
 	std::list<attachment> legacy_async_apps;
@@ -461,7 +464,7 @@ void applications_pool::mount(std::auto_ptr<factory> aps,mount_point const &mp)
 	p->flags(app::legacy);
 
 	booster::unique_lock<booster::recursive_mutex> lock(d->lock);
-	d->apps.push_back(_data::attachment(p,mp));
+	d->apps.push_back(_data::attachment(p, mp));
 }
 
 void applications_pool::mount(std::auto_ptr<factory> aps)

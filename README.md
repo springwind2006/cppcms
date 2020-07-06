@@ -179,4 +179,4 @@ make install
 ```
    
    
-See [How to build CppCMS 1.x.x](http://cppcms.com/wikipp/en/page/cppcms_1x_build)
+See [How to build CppCMS 1.x.x](http://cppcms.doc.h928.com/wikipp/en/page/cppcms_1x_build)
